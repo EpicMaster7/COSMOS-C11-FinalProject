@@ -1,6 +1,6 @@
 clc;
 clear;
-clf
+clf;
 
 %ALL FUNCTION DEFINITIONS ARE AT THE END OF THE FILE
 
@@ -67,7 +67,7 @@ start_point = [0, -10];
 end_point = [0, 10];
 
 % Visualization parameters
-resolution = 0.05;  % Resolution for plotting obstacles
+resolution = 0.1;  % Resolution for plotting obstacles
 marker_size = 10;
 
 % Plot maze boundaries
@@ -189,6 +189,7 @@ y = y(1:end-1);
 
 dist_to_target = sqrt((px(end) - end_point(1))^2 + (py(end) - end_point(2))^2); %finding distance from current point to target
 
+sum = 0; %for plotting
 for i = 1:length(x) %iterating over # of waypoints
     dist_to_target = sqrt((px(end) - end_point(1))^2 + (py(end) - end_point(2))^2); %computing distance to target
     e(end+1) = real(sqrt((x(i) - px(end))^2 + (y(i) - py(end))^2)); %computing new distance error to current waypoint
@@ -212,8 +213,8 @@ for i = 1:length(x) %iterating over # of waypoints
         px(end+1) = px(end) + h * v(end) * costerm; 
         py(end+1) = py(end) + h * v(end) * sinterm;
 
-        %only plotting once every 25 time steps
-        if mod(sum, 25) == 0
+        %only plotting once every 10 time steps
+        if mod(sum, 10) == 0
             pause(0.0000001)
             plot(px,py, 'LineWidth', 2.0);
         end
