@@ -181,5 +181,3 @@ These are **future-work ideas**, not implemented features of the checked-in proj
 This project was developed for **COSMOS 2024, Cluster 11: Fundamentals of Machine Learning in Robotics**, by **Neil Hu, Poorv Patil, Saanvi Kumar, Sophia Ghimire, and Stephen Rong**.
 
 The accompanying final-project poster is titled **“Robotic Maze Navigation Using Proportional Controller and Floodfill Pathfinder.”** It documents the modeling rationale, floodfill and DFS approach, control-law derivation, visual simulation, and suggested extensions.
-
-**Implementation provenance:** The MATLAB source predates this README. This documentation was added in October 2026 and does not imply that additional algorithms, tests, hardware experiments, or performance measurements were carried out at that time.
