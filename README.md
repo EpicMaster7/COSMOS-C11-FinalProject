@@ -1,0 +1,185 @@
+# Robotic Maze Navigation with a Proportional Controller and Floodfill Pathfinder
+
+**COSMOS 2024 | Cluster 11: Fundamentals of Machine Learning in Robotics | MATLAB**
+
+A MATLAB simulation of a wheeled robot navigating a predefined maze using a grid-based floodfill pathfinder, depth-first path reconstruction, and proportional feedback control. The project combines discrete path planning with continuous-looking motion under a kinematic unicycle model.
+
+**Project team:** Neil Hu, Poorv Patil, Saanvi Kumar, Sophia Ghimire, and Stephen Rong.
+
+> **Scope:** This repository contains the original MATLAB simulation script. The team's final project poster discusses an Arduino-based Osoyoo robot as a potential proof of concept, but this repository does **not** contain a physical-robot implementation or hardware test results.
+
+## Overview
+
+Inspired by Micromouse-style maze solving, the project addresses two linked problems:
+
+1. **Where should the robot go?** Compute a collision-aware route through a maze represented as a discrete grid.
+2. **How should the robot move along it?** Convert path cells into waypoints, calculate heading and position errors, and use proportional control to animate the robot's trajectory.
+
+The source file, [`COSMOS2024_FINAL_PROJECT_CODE.m`](COSMOS2024_FINAL_PROJECT_CODE.m), includes maze construction, recursive floodfill, path reconstruction, a motion controller, and MATLAB visualization.
+
+### Pipeline
+
+```text
+Hard-coded maze obstacles + start/goal
+                  |
+                  v
+       2D occupancy-style grid
+                  |
+                  v
+    Recursive floodfill from start
+                  |
+                  v
+  Backtrack from goal with DFS-style
+       decreasing-distance search
+                  |
+                  v
+          Waypoint sequence
+                  |
+                  v
+ Proportional heading / distance control
+                  |
+                  v
+ Unicycle-model position integration
+                  |
+                  v
+   MATLAB plot of planned/executed path
+```
+
+## How it works
+
+### 1. Maze representation and obstacle checks
+
+The maze spans **x, y ∈ [−10, 10]**. Walls are defined as MATLAB anonymous-function predicates describing rectangular regions and boundaries. Grid cells representing obstacles receive a value of `Inf`.
+
+For MATLAB's 1-based indexing, the code maps a coordinate `(x, y)` to `(x + 11, y + 11)`. Path planning uses **unit-spaced grid locations**, while the red obstacle visualization uses a finer plotting resolution of `0.1`.
+
+The configured start and goal are:
+
+- **Start:** `(0, -10)`
+- **Goal:** `(0, 10)`
+
+The `ok(i, j)` helper checks whether a candidate grid index is within the **21 × 21 logical maze range** and is not marked as a wall. This is grid-based obstacle checking against a *known map*, rather than live sensing from a physical robot.
+
+### 2. Floodfill and path reconstruction
+
+The `floodfill(i, j, steps)` function recursively explores the four cardinal neighbors of a grid cell, recording step counts when a cell is unvisited or the function's update condition identifies an improved route.
+
+After the grid has been labeled, `pdfs(i, j, bp)` performs a DFS-style search **backward from the goal**, following cells with smaller floodfill values to build a route to the start. The resulting indices are converted back to maze coordinates and split into x/y waypoints.
+
+This approach is designed to favor short paths on the discretized map. **The repository does not include a formal optimality proof or tests demonstrating correct behavior across arbitrary mazes.**
+
+### 3. Proportional control and robot motion
+
+The simulated robot uses a **kinematic unicycle model** with position `(x, y)` and heading `θ`. For each waypoint, the controller computes distance to the waypoint and a desired heading:
+
+```text
+distance_error = sqrt((target_x - x)^2 + (target_y - y)^2)
+desired_heading = atan2(target_y - y, target_x - x)
+
+linear_velocity  = kv * distance_error
+angular_velocity = kh * (desired_heading - heading)
+```
+
+Position is updated using a forward-Euler-style step:
+
+```text
+x_next = x + h * linear_velocity * cos(heading)
+y_next = y + h * linear_velocity * sin(heading)
+```
+
+The current script updates heading with `heading_next = heading + angular_velocity`, **without multiplying by `h`**. This differs from the conventional Euler discretization of `dθ/dt = ω`, where `heading_next = heading + h * angular_velocity`. The README documents the implementation as written; it does not assume that discrepancy has been corrected.
+
+The robot proceeds through its generated waypoints and plots its position as the simulated motion evolves.
+
+### 4. Visualization
+
+Running the MATLAB script opens a figure showing:
+
+- **Red points:** maze walls/obstacles
+- **Green circle:** starting position
+- **Red circle:** goal position
+- **Trajectory line:** robot motion generated by the controller
+
+The figure is titled **“COSMOS 24 Cluster 11 Maze.”** The animation uses MATLAB plotting and `pause`; it does not export a video automatically.
+
+## Run locally
+
+### Requirements
+
+- MATLAB with support for **local functions in scripts** (R2016b or later)
+- A desktop environment capable of displaying MATLAB figures
+
+The script uses built-in MATLAB functionality and has no explicit third-party toolbox imports. **No particular MATLAB release or toolbox configuration was tested as part of this README update.**
+
+### Steps
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/EpicMaster7/COSMOS-C11-FinalProject.git
+   cd COSMOS-C11-FinalProject
+   ```
+2. Open MATLAB and set the Current Folder to the cloned repository.
+3. Run the script from the MATLAB Command Window:
+   ```matlab
+   COSMOS2024_FINAL_PROJECT_CODE
+   ```
+
+The script clears the command window, variables, and current figure, then constructs and draws the maze while simulating the controller's motion. It prints some grid coordinates during maze construction and displays a figure with the resulting trajectory.
+
+**No input files, API keys, trained models, or network connections are required by the checked-in script.**
+
+## Parameters worth experimenting with
+
+The current values are defined directly in `COSMOS2024_FINAL_PROJECT_CODE.m`:
+
+| Parameter | Value | Purpose |
+| --- | --- | --- |
+| Maze bounds | `[-10, 10]` on each axis | Coordinate limits |
+| `start_point` | `[0, -10]` | Start position |
+| `end_point` | `[0, 10]` | Target position |
+| `resolution` | `0.1` | Obstacle drawing resolution |
+| `h` | `0.1` | Position integration timestep |
+| `kh` | `0.3` | Proportional angular gain |
+| `kv` | `0.5` | Proportional linear gain |
+| Waypoint arrival threshold | `0.3` | Distance tolerance for waypoint advancement |
+| `tol` | `0.001` | Numerical tolerance when evaluating trigonometric terms |
+
+To try a different maze, edit the `obstacles` predicates and, if necessary, the start/goal coordinates in the script. **The grid sizing, index checks, and coordinate offset are partly hard-coded**, so changes to the bounds require further code modifications.
+
+## Repository structure
+
+```text
+COSMOS-C11-FinalProject/
+├── COSMOS2024_FINAL_PROJECT_CODE.m   # Path planning, controller, and visualization
+└── README.md                         # Project overview and instructions
+```
+
+All function definitions (`ok`, `pdfs`, and `floodfill`) appear at the end of the MATLAB script.
+
+## Limitations and future directions
+
+**Current implementation limitations**
+
+- The maze and obstacles are predefined. There is no live sensor, camera, SLAM, or online map-building pipeline.
+- The pathfinder relies on a fixed-resolution grid and four-directional movement; it does not implement continuous-space path optimization.
+- The angle error is not normalized to `[-π, π]`, and heading integration does not use the same timestep factor as position integration.
+- The waypoint loop has no maximum iteration count or timeout. Its `while` condition includes `dist_to_target < 0.1`, which can lead to a nonterminating loop when that condition holds.
+- The script draws the evolving trajectory, but it does not independently check the controller's simulated positions for wall collisions.
+- The repository contains no automated test suite, standardized performance benchmark, or verified physical-robot deployment.
+
+**Proposed in the original project poster**
+
+- Test the controller and planner on an Arduino-based Osoyoo robot
+- Investigate Deep Q-Network (DQN) methods for path planning
+- Explore potential-field-based obstacle avoidance and randomly generated mazes
+- Extend the concept to multiple cooperating robots
+
+These are **future-work ideas**, not implemented features of the checked-in project.
+
+## Project context and attribution
+
+This project was developed for **COSMOS 2024, Cluster 11: Fundamentals of Machine Learning in Robotics**, by **Neil Hu, Poorv Patil, Saanvi Kumar, Sophia Ghimire, and Stephen Rong**.
+
+The accompanying final-project poster is titled **“Robotic Maze Navigation Using Proportional Controller and Floodfill Pathfinder.”** It documents the modeling rationale, floodfill and DFS approach, control-law derivation, visual simulation, and suggested extensions.
+
+**Implementation provenance:** The MATLAB source predates this README. This documentation was added in October 2026 and does not imply that additional algorithms, tests, hardware experiments, or performance measurements were carried out at that time.
